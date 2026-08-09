@@ -30,3 +30,12 @@
   保证 help 与标签键名一致性;
 - Register 空指标名校验(MTRX_INVALID_CONFIG);
 - 覆盖率 100%,race / vet / staticcheck / fuzz / vuln 全绿。
+
+## [v0.3.0] - 2026-08-09
+
+### 新增
+
+- Gather 快照助手:抓取注册表全部指标(测试与调试);
+- examples/basic:一个实例喂饱 cachex 与 resiliencex 的组合示例;
+- CI 新增 examples job;
+- 覆盖率 100%,race / vet / staticcheck / fuzz / vuln 全绿。

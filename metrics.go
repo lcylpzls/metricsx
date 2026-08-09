@@ -8,6 +8,7 @@ import (
 
 	"github.com/lcylpzls/errx"
 	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 )
 
 // registeredMetric 是预注册的指标元信息。
@@ -109,6 +110,15 @@ func (m *Metrics) Register(name, help string, labelNames ...string) error {
 // Registry 返回当前注册表(默认或自定义)。
 func (m *Metrics) Registry() prometheus.Registerer {
 	return m.cfg.registry
+}
+
+// Gather 返回注册表全部指标快照(测试与调试用)。
+// 默认注册表对应 DefaultGatherer。
+func (m *Metrics) Gather() ([]*dto.MetricFamily, error) {
+	if g, ok := m.cfg.registry.(prometheus.Gatherer); ok {
+		return g.Gather()
+	}
+	return nil, errx.New(errx.KindInvalid, CodeInvalidConfig, "注册表不支持 Gather")
 }
 
 // counterVec 获取或懒创建计数器向量。

@@ -187,8 +187,64 @@ func TestRegisterAfterLazyCreated(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	if Version != "v0.2.0" {
-		t.Errorf("Version = %s,want v0.2.0", Version)
+	if Version != "v0.3.0" {
+		t.Errorf("Version = %s,want v0.3.0", Version)
+	}
+}
+
+func TestGather(t *testing.T) {
+	m, _ := newTestMetrics(t)
+	m.IncCounter("gather_test", "v")
+	families, err := m.Gather()
+	if err != nil {
+		t.Fatalf("Gather 失败:%v", err)
+	}
+	found := false
+	for _, f := range families {
+		if f.GetName() == "gather_test_total" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("Gather 应包含写入的指标")
+	}
+}
+
+func TestGatherDefaultRegistry(t *testing.T) {
+	m, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.IncCounter("gather_default", "v")
+	families, err := m.Gather()
+	if err != nil {
+		t.Fatalf("默认注册表 Gather 失败:%v", err)
+	}
+	found := false
+	for _, f := range families {
+		if f.GetName() == "gather_default_total" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("默认注册表 Gather 应包含写入的指标")
+	}
+}
+
+// registererOnly 只实现 Registerer 不实现 Gatherer。
+type registererOnly struct{}
+
+func (registererOnly) Register(prometheus.Collector) error  { return nil }
+func (registererOnly) MustRegister(...prometheus.Collector) {}
+func (registererOnly) Unregister(prometheus.Collector) bool { return true }
+
+func TestGatherUnsupportedRegistry(t *testing.T) {
+	m, err := New(WithRegistry(registererOnly{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Gather(); err == nil {
+		t.Fatal("不支持的注册表 Gather 应报错")
 	}
 }
 
