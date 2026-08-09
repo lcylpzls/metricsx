@@ -11,6 +11,14 @@
 设计输入:[metrics-research.md](metrics-research.md) — 指标适配调研手册
 (client_golang、自家库 Metrics 接口、常见 Web 适配器)。
 
+运行与治理:
+
+6. [operations.md](operations.md) — 接入、命名规范与场景;
+7. [performance.md](performance.md) — 性能基准与对比;
+8. [comparison.md](comparison.md) — 与 client_golang 对比;
+9. [quality.md](quality.md) — 质量门槛与测试策略;
+10. [release.md](release.md) — 版本与发布流程。
+
 ## 决策状态
 
 ADR 按全自动迭代授权执行,不再逐项确认;API 随版本冻结演进。

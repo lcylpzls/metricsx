@@ -3,7 +3,7 @@
 自研 Prometheus 指标适配层:一个实例喂饱底座全部库的统一
 Metrics 接口,统一命名、统一标签、统一分桶。
 
-> 当前状态:**v0.4.0 实现完成,待 CI 验证与发布**。
+> 当前状态:**v0.5.0 实现完成,待 CI 验证与发布**。
 
 ## 快速上手
 
@@ -30,6 +30,14 @@ m.Register("dbx.queries", "数据库查询次数", "op")
 - IncCounter 命中 ~42ns、ObserveDuration ~43ns,热路径 0 分配;
 - 指标缓存 sync.Map 无锁读,并发懒创建安全;
 - 详见 [docs/performance.md](docs/performance.md)。
+
+## 文档与治理
+
+- [docs/README.md](docs/README.md) — 文档索引
+- [docs/operations.md](docs/operations.md) — 运行手册
+- [examples/basic](examples/basic) — 接入示例
+- [CONTRIBUTING.md](CONTRIBUTING.md) — 开发流程
+- [SECURITY.md](SECURITY.md) — 安全说明
 
 ## 定位
 

@@ -50,3 +50,12 @@
   换来统一接口/懒创建/命名规范化/标签校验);
 - docs/performance.md;
 - 覆盖率 100%,race / vet / staticcheck / fuzz / vuln 全绿。
+
+## [v0.5.0] - 2026-08-09
+
+### 治理与文档
+
+- SECURITY.md、CODEOWNERS、CONTRIBUTING、issue/PR 模板;
+- operations(接入/命名/场景)、quality(质量门槛)、release(发布流程)、
+  comparison(与 client_golang 对比)文档;
+- 覆盖率 100%,race / vet / staticcheck / fuzz / vuln 全绿。
