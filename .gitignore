@@ -1,6 +1,7 @@
 .idea/
 .vscode/
 coverage.out
+cov.out
 *.exe
 *.test
 bench.log
