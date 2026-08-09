@@ -3,7 +3,7 @@ module github.com/lcylpzls/metricsx
 go 1.26
 
 require (
-	github.com/lcylpzls/errx v1.2.0
+	github.com/lcylpzls/errx v1.3.1
 	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/client_model v0.6.2
 )

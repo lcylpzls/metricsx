@@ -53,15 +53,15 @@ func WithBuckets(buckets []float64) Option {
 // validateConfig 校验配置参数。
 func validateConfig(cfg config) error {
 	if cfg.namespace != "" && !metricNamePattern.MatchString(cfg.namespace) {
-		return errx.Newf(errx.KindInvalid, CodeInvalidConfig,
+		return errx.NewCodef(CodeInvalidConfig,
 			"命名空间 %q 非法,仅允许字母数字下划线冒号", cfg.namespace)
 	}
 	if cfg.registry == nil {
-		return errx.New(errx.KindInvalid, CodeInvalidConfig, "注册表不能为空")
+		return errx.NewCode(CodeInvalidConfig, "注册表不能为空")
 	}
 	for _, b := range cfg.buckets {
 		if b <= 0 {
-			return errx.New(errx.KindInvalid, CodeInvalidConfig, "分桶必须为正数")
+			return errx.NewCode(CodeInvalidConfig, "分桶必须为正数")
 		}
 	}
 	return nil

@@ -12,5 +12,7 @@ const (
 
 func init() {
 	errx.RegisterCode(CodeInvalidConfig, "配置非法")
+	errx.RegisterCodeKind(CodeInvalidConfig, errx.KindInvalid)
 	errx.RegisterCode(CodeAlreadyRegistered, "指标已注册")
+	errx.RegisterCodeKind(CodeAlreadyRegistered, errx.KindInvalid)
 }
