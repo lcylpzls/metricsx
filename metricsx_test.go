@@ -155,6 +155,43 @@ func TestRegisterDuplicate(t *testing.T) {
 	}
 }
 
+func TestRegisterEmptyName(t *testing.T) {
+	m, _ := newTestMetrics(t)
+	err := m.Register("", "帮助")
+	if err == nil {
+		t.Fatal("空指标名应报错")
+	}
+	if code, _ := errx.CodeOf(err); code != CodeInvalidConfig {
+		t.Errorf("错误码 = %s,want %s", code, CodeInvalidConfig)
+	}
+}
+
+func TestRegisterAfterLazyCreated(t *testing.T) {
+	m, _ := newTestMetrics(t)
+	m.IncCounter("already", "v")
+	err := m.Register("already", "帮助", "op")
+	if err == nil {
+		t.Fatal("已懒创建的指标再注册应报错")
+	}
+	if code, _ := errx.CodeOf(err); code != CodeAlreadyRegistered {
+		t.Errorf("错误码 = %s,want %s", code, CodeAlreadyRegistered)
+	}
+	m.ObserveDuration("already_dur", 1.0, "v")
+	err = m.Register("already_dur", "帮助", "op")
+	if err == nil {
+		t.Fatal("已懒创建的直方图再注册应报错")
+	}
+	if code, _ := errx.CodeOf(err); code != CodeAlreadyRegistered {
+		t.Errorf("错误码 = %s,want %s", code, CodeAlreadyRegistered)
+	}
+}
+
+func TestVersion(t *testing.T) {
+	if Version != "v0.2.0" {
+		t.Errorf("Version = %s,want v0.2.0", Version)
+	}
+}
+
 func TestLabelMismatchIgnored(t *testing.T) {
 	m, reg := newTestMetrics(t)
 	if err := m.Register("two", "帮助", "a", "b"); err != nil {

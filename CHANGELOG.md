@@ -21,3 +21,12 @@
 - 依赖仅 prometheus/client_golang;覆盖率 100%,
   race / vet / staticcheck / fuzz / vuln 全绿;
 - IncCounter 命中 32ns,ObserveDuration 38ns,0 分配。
+
+## [v0.2.0] - 2026-08-09
+
+### 修复与完善
+
+- Register 冲突策略:先懒创建后注册(计数器/直方图)明确报错,
+  保证 help 与标签键名一致性;
+- Register 空指标名校验(MTRX_INVALID_CONFIG);
+- 覆盖率 100%,race / vet / staticcheck / fuzz / vuln 全绿。

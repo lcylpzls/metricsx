@@ -86,10 +86,21 @@ func validLabels(labels []string) bool {
 // Register 预注册指标,声明帮助文本与标签键名。
 // 重复注册返回 MTRX_ALREADY_REGISTERED。
 func (m *Metrics) Register(name, help string, labelNames ...string) error {
+	if name == "" {
+		return errx.New(errx.KindInvalid, CodeInvalidConfig, "指标名不能为空")
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, ok := m.registered[name]; ok {
 		return errx.Newf(errx.KindInvalid, CodeAlreadyRegistered, "指标 %q 已注册", name)
+	}
+	if _, ok := m.counters[name]; ok {
+		return errx.Newf(errx.KindInvalid, CodeAlreadyRegistered,
+			"指标 %q 已被懒创建为计数器", name)
+	}
+	if _, ok := m.histograms[name]; ok {
+		return errx.Newf(errx.KindInvalid, CodeAlreadyRegistered,
+			"指标 %q 已被懒创建为直方图", name)
 	}
 	m.registered[name] = registeredMetric{help: help, labelNames: append([]string(nil), labelNames...)}
 	return nil
