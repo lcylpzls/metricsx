@@ -187,8 +187,8 @@ func TestRegisterAfterLazyCreated(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	if Version != "v0.3.0" {
-		t.Errorf("Version = %s,want v0.3.0", Version)
+	if Version != "v0.4.0" {
+		t.Errorf("Version = %s,want v0.4.0", Version)
 	}
 }
 
@@ -325,6 +325,28 @@ func TestConcurrentIncCounter(t *testing.T) {
 	f := gatherFamily(t, reg, "hot_total")
 	if f == nil || f.GetMetric()[0].GetCounter().GetValue() != 4000 {
 		t.Errorf("并发计数不符:%v", f)
+	}
+}
+
+func TestConcurrentObserveDuration(t *testing.T) {
+	m, reg := newTestMetrics(t)
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			for j := 0; j < 500; j++ {
+				m.ObserveDuration("dur_only", 0.1, "v")
+			}
+		}()
+	}
+	close(start)
+	wg.Wait()
+	f := gatherFamily(t, reg, "dur_only_seconds")
+	if f == nil || f.GetMetric()[0].GetHistogram().GetSampleCount() != 4000 {
+		t.Errorf("并发直方图计数不符")
 	}
 }
 

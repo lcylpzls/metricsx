@@ -31,3 +31,16 @@ func BenchmarkObserveDurationHit(b *testing.B) {
 		m.ObserveDuration("bench_dur", 0.1, "v")
 	}
 }
+
+// BenchmarkDirectClient 基准:直接使用 client_golang 的 Vec(对照组)。
+func BenchmarkDirectClient(b *testing.B) {
+	reg := prometheus.NewRegistry()
+	vec := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "direct_total",
+	}, []string{"label0"})
+	reg.MustRegister(vec)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		vec.WithLabelValues("v").Inc()
+	}
+}

@@ -24,8 +24,8 @@ type Metrics struct {
 
 	mu         sync.RWMutex
 	registered map[string]registeredMetric
-	counters   map[string]*prometheus.CounterVec
-	histograms map[string]*prometheus.HistogramVec
+	counters   sync.Map // string -> *prometheus.CounterVec
+	histograms sync.Map // string -> *prometheus.HistogramVec
 }
 
 // New 创建指标适配器。配置非法返回 MTRX_INVALID_CONFIG。
@@ -42,8 +42,6 @@ func New(opts ...Option) (*Metrics, error) {
 	return &Metrics{
 		cfg:        cfg,
 		registered: make(map[string]registeredMetric),
-		counters:   make(map[string]*prometheus.CounterVec),
-		histograms: make(map[string]*prometheus.HistogramVec),
 	}, nil
 }
 
@@ -95,11 +93,11 @@ func (m *Metrics) Register(name, help string, labelNames ...string) error {
 	if _, ok := m.registered[name]; ok {
 		return errx.Newf(errx.KindInvalid, CodeAlreadyRegistered, "指标 %q 已注册", name)
 	}
-	if _, ok := m.counters[name]; ok {
+	if _, ok := m.counters.Load(name); ok {
 		return errx.Newf(errx.KindInvalid, CodeAlreadyRegistered,
 			"指标 %q 已被懒创建为计数器", name)
 	}
-	if _, ok := m.histograms[name]; ok {
+	if _, ok := m.histograms.Load(name); ok {
 		return errx.Newf(errx.KindInvalid, CodeAlreadyRegistered,
 			"指标 %q 已被懒创建为直方图", name)
 	}
@@ -124,10 +122,13 @@ func (m *Metrics) Gather() ([]*dto.MetricFamily, error) {
 // counterVec 获取或懒创建计数器向量。
 // 标签数量与注册键名不一致时返回 nil。
 func (m *Metrics) counterVec(name string, labelCount int) *prometheus.CounterVec {
+	if v, ok := m.counters.Load(name); ok {
+		return v.(*prometheus.CounterVec)
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if vec, ok := m.counters[name]; ok {
-		return vec
+	if v, ok := m.counters.Load(name); ok {
+		return v.(*prometheus.CounterVec)
 	}
 	var vec *prometheus.CounterVec
 	reg, ok := m.metricMeta(name, labelCount)
@@ -143,16 +144,19 @@ func (m *Metrics) counterVec(name string, labelCount int) *prometheus.CounterVec
 		// 注册失败(名称冲突等)不缓存,静默忽略本次。
 		return nil
 	}
-	m.counters[name] = vec
+	m.counters.Store(name, vec)
 	return vec
 }
 
 // histogramVec 获取或懒创建直方图向量。
 func (m *Metrics) histogramVec(name string, labelCount int) *prometheus.HistogramVec {
+	if v, ok := m.histograms.Load(name); ok {
+		return v.(*prometheus.HistogramVec)
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if vec, ok := m.histograms[name]; ok {
-		return vec
+	if v, ok := m.histograms.Load(name); ok {
+		return v.(*prometheus.HistogramVec)
 	}
 	var vec *prometheus.HistogramVec
 	reg, ok := m.metricMeta(name, labelCount)
@@ -166,9 +170,10 @@ func (m *Metrics) histogramVec(name string, labelCount int) *prometheus.Histogra
 		Buckets:   m.cfg.buckets,
 	}, reg.labelNames)
 	if err := m.cfg.registry.Register(vec); err != nil {
+		// 注册失败(名称冲突等)不缓存,静默忽略本次。
 		return nil
 	}
-	m.histograms[name] = vec
+	m.histograms.Store(name, vec)
 	return vec
 }
 

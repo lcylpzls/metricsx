@@ -39,3 +39,14 @@
 - examples/basic:一个实例喂饱 cachex 与 resiliencex 的组合示例;
 - CI 新增 examples job;
 - 覆盖率 100%,race / vet / staticcheck / fuzz / vuln 全绿。
+
+## [v0.4.0] - 2026-08-09
+
+### 性能
+
+- 指标缓存改 sync.Map:读路径无锁,并发懒创建安全;
+- IncCounter 命中 42ns / ObserveDuration 43ns,0 分配;
+- 与直接 client_golang 对比基准(21ns,适配成本约 2 倍,
+  换来统一接口/懒创建/命名规范化/标签校验);
+- docs/performance.md;
+- 覆盖率 100%,race / vet / staticcheck / fuzz / vuln 全绿。
