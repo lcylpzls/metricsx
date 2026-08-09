@@ -116,7 +116,7 @@ func (m *Metrics) Gather() ([]*dto.MetricFamily, error) {
 	if g, ok := m.cfg.registry.(prometheus.Gatherer); ok {
 		return g.Gather()
 	}
-	return nil, errx.New(errx.KindInvalid, CodeInvalidConfig, "注册表不支持 Gather")
+	return nil, errx.NewCode(CodeInvalidConfig, "注册表不支持 Gather")
 }
 
 // counterVec 获取或懒创建计数器向量。
