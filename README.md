@@ -3,7 +3,7 @@
 自研 Prometheus 指标适配层:一个实例喂饱底座全部库的统一
 Metrics 接口,统一命名、统一标签、统一分桶。
 
-> 当前状态:**v0.5.0 实现完成,待 CI 验证与发布**。
+> 当前状态:**v1.0.0 正式版,API 已冻结**。
 
 ## 快速上手
 
@@ -38,6 +38,14 @@ m.Register("dbx.queries", "数据库查询次数", "op")
 - [examples/basic](examples/basic) — 接入示例
 - [CONTRIBUTING.md](CONTRIBUTING.md) — 开发流程
 - [SECURITY.md](SECURITY.md) — 安全说明
+
+## 稳定性承诺
+
+- 本库遵循[语义化版本](https://semver.org/lang/zh-CN/);
+- v1.0.0 起公开 API 冻结:新增能力以次版本发布,
+  破坏性变更仅随主版本;
+- 每个版本发布前执行:100% 覆盖率、race、staticcheck、fuzz、
+  govulncheck、apidiff 对比与三平台 CI。
 
 ## 定位
 

@@ -187,8 +187,8 @@ func TestRegisterAfterLazyCreated(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	if Version != "v0.5.0" {
-		t.Errorf("Version = %s,want v0.5.0", Version)
+	if Version != "v1.0.0" {
+		t.Errorf("Version = %s,want v1.0.0", Version)
 	}
 }
 

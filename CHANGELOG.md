@@ -59,3 +59,20 @@
 - operations(接入/命名/场景)、quality(质量门槛)、release(发布流程)、
   comparison(与 client_golang 对比)文档;
 - 覆盖率 100%,race / vet / staticcheck / fuzz / vuln 全绿。
+
+## [v1.0.0] - 2026-08-09
+
+### 正式版
+
+- 公开 API 冻结,遵循语义化版本;
+- Version 常量更新为 v1.0.0;
+- README 稳定性承诺正式生效;
+- docs/api-design.md 升级为正式 API 参考;
+- 全量回归:100% 覆盖率、race、staticcheck、fuzz、govulncheck、
+  apidiff 对比 v0.5.0、三平台 CI。
+
+### 版本历程
+
+- v0.1.0 – v0.5.0:适配核心、冲突策略、Gather 与示例、
+  性能优化、工业级打磨共 5 个迭代版本;
+- v1.0.0:正式版,API 冻结。
