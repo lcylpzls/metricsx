@@ -8,7 +8,7 @@ require (
 	github.com/lcylpzls/idgenx v1.2.0
 	github.com/lcylpzls/jobx v1.3.0
 	github.com/lcylpzls/metricsx v1.4.1
-	github.com/lcylpzls/metricsx/prometheus v0.1.0
+	github.com/lcylpzls/metricsx/prometheus v0.1.1
 	github.com/lcylpzls/testx v1.3.0
 	github.com/lcylpzls/updatex v0.9.0
 	github.com/prometheus/client_golang v1.23.0

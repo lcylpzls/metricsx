@@ -5,7 +5,7 @@ go 1.26.5
 require (
 	github.com/lcylpzls/cachex v1.2.0
 	github.com/lcylpzls/metricsx v1.4.1
-	github.com/lcylpzls/metricsx/prometheus v0.1.0
+	github.com/lcylpzls/metricsx/prometheus v0.1.1
 	github.com/lcylpzls/resiliencex v1.1.3
 	github.com/prometheus/client_golang v1.23.0
 )
