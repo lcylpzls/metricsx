@@ -2,6 +2,9 @@ package metricsx
 
 import (
 	"unicode/utf8"
+
+	"github.com/lcylpzls/errx"
+	"github.com/lcylpzls/validx"
 )
 
 // Metrics 是指标入口：所有操作委托后端（Sink），并发安全。
@@ -86,12 +89,21 @@ func (m *Metrics) Register(name, help string, labelNames ...string) error {
 	return m.sink.RegisterMetric(name, help, labelNames)
 }
 
-// validLabels 校验标签值均为合法 UTF-8（非法标签静默忽略）。
-func validLabels(labels []string) bool {
-	for _, l := range labels {
-		if !utf8.ValidString(l) {
-			return false
+// init 注册标签校验规则到 validx 全局规则表。
+func init() {
+	_ = validx.RegisterRule("metricsx_valid_labels", func(value any, param, path string) error {
+		// 内部调用保证 value 为 []string。
+		labels := value.([]string)
+		for _, l := range labels {
+			if !utf8.ValidString(l) {
+				return errx.NewCode(CodeInvalidConfig, "标签值必须是合法 UTF-8")
+			}
 		}
-	}
-	return true
+		return nil
+	})
+}
+
+// validLabels 校验标签值均为合法 UTF-8（非法标签静默忽略，统一走 validx 规则）。
+func validLabels(labels []string) bool {
+	return validx.ValidateField(labels, "metricsx_valid_labels") == nil
 }
