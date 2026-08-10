@@ -5,12 +5,12 @@ go 1.26.5
 require (
 	github.com/lcylpzls/clix v1.3.0
 	github.com/lcylpzls/errx v1.4.0
-	github.com/lcylpzls/idgenx v1.0.2
-	github.com/lcylpzls/jobx v1.0.4
-	github.com/lcylpzls/metricsx v1.4.0
+	github.com/lcylpzls/idgenx v1.2.0
+	github.com/lcylpzls/jobx v1.3.0
+	github.com/lcylpzls/metricsx v1.4.1
 	github.com/lcylpzls/metricsx/prometheus v0.1.0
-	github.com/lcylpzls/testx v1.2.1
-	github.com/lcylpzls/updatex v0.5.0
+	github.com/lcylpzls/testx v1.3.0
+	github.com/lcylpzls/updatex v0.9.0
 	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/client_model v0.6.2
 )
@@ -20,14 +20,16 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lcylpzls/confx v0.3.3 // indirect
-	github.com/lcylpzls/httpx v1.0.2 // indirect
-	github.com/lcylpzls/logx v1.1.0 // indirect
-	github.com/lcylpzls/validx v1.1.2 // indirect
+	github.com/lcylpzls/confx v0.4.4 // indirect
+	github.com/lcylpzls/cryptox v0.6.6 // indirect
+	github.com/lcylpzls/httpx v1.1.3 // indirect
+	github.com/lcylpzls/logx v1.2.5 // indirect
+	github.com/lcylpzls/validx v1.1.3 // indirect
 	github.com/magiconair/properties v1.18.11 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
+	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
@@ -35,7 +37,3 @@ require (
 	gopkg.in/ini.v1 v1.67.3 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/lcylpzls/metricsx => ../
-
-replace github.com/lcylpzls/metricsx/prometheus => ../prometheus

@@ -4,8 +4,8 @@ go 1.26.5
 
 require (
 	github.com/lcylpzls/errx v1.4.0
-	github.com/lcylpzls/metricsx v1.4.0
-	github.com/lcylpzls/testx v1.2.1
+	github.com/lcylpzls/metricsx v1.4.1
+	github.com/lcylpzls/testx v1.3.0
 	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/client_model v0.6.2
 )
@@ -19,5 +19,3 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )
-
-replace github.com/lcylpzls/metricsx => ../
