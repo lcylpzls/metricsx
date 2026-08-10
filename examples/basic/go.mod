@@ -3,10 +3,10 @@ module github.com/lcylpzls/metricsx/examples/basic
 go 1.26.5
 
 require (
-	github.com/lcylpzls/cachex v1.3.0
-	github.com/lcylpzls/metricsx v1.5.0
-	github.com/lcylpzls/metricsx/prometheus v0.1.3
-	github.com/lcylpzls/resiliencex v1.3.0
+	github.com/lcylpzls/cachex v1.3.1
+	github.com/lcylpzls/metricsx v1.5.1
+	github.com/lcylpzls/metricsx/prometheus v0.1.4
+	github.com/lcylpzls/resiliencex v1.3.1
 	github.com/prometheus/client_golang v1.23.0
 )
 
