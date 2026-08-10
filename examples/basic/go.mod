@@ -1,6 +1,6 @@
 module github.com/lcylpzls/metricsx/examples/basic
 
-go 1.26
+go 1.26.5
 
 require (
 	github.com/lcylpzls/cachex v1.0.0
@@ -11,7 +11,7 @@ require (
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/lcylpzls/errx v1.3.1 // indirect
+	github.com/lcylpzls/errx v1.4.0 // indirect
 	github.com/lcylpzls/logx v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/client_golang v1.23.0 // indirect
