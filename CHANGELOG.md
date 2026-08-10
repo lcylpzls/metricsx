@@ -2,6 +2,20 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.6.0] - 2026-08-11
+
+### 重构
+
+- 实现主体下沉 `internal/core`，根包仅保留公开 API（类型别名 + 转发）；
+- 白盒测试迁入 `internal/core`，根包新增黑盒冒烟测试，两处覆盖率均 100%；
+- `Version` 同步为 v1.6.0。
+
+### 破坏性变更
+
+- 删除 `adapters/*` 全部子模块（clix/errx/filex/idgenx/jobx/updatex，全家族零引用）；各库已直接使用 `metricsx.Sink` 协议，无需适配子包；
+- `prometheus` 后端子模块保留。
+
+
 ## [v1.5.4] - 2026-08-10
 
 ### 变更

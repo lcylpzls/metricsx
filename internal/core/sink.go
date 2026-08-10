@@ -1,4 +1,4 @@
-package metricsx
+package core
 
 // Sink 是指标后端协议：核心只定义协议，不绑定具体实现。
 // Prometheus 后端见 metricsx/prometheus 子模块。

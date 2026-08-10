@@ -1,4 +1,4 @@
-package metricsx
+package core
 
 import (
 	"unicode/utf8"
