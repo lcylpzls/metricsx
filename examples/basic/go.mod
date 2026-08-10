@@ -13,8 +13,9 @@ require (
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/lcylpzls/errx v1.4.0 // indirect
+	github.com/lcylpzls/errx v1.5.4 // indirect
 	github.com/lcylpzls/logx v1.2.5 // indirect
+	github.com/lcylpzls/validx v1.2.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
