@@ -17,6 +17,10 @@ type registeredMetric struct {
 	labelNames []string
 }
 
+// lockHook 是测试专用并发分支钩子，生产恒为 nil，
+// 用于确定性覆盖懒创建路径中“二次命中”的竞态分支。
+var lockHook func(*Metrics)
+
 // Metrics 是 Prometheus 指标适配器,实现底座各库统一形态的
 // Metrics 接口(IncCounter / ObserveDuration),并发安全。
 type Metrics struct {
@@ -26,6 +30,7 @@ type Metrics struct {
 	registered map[string]registeredMetric
 	counters   sync.Map // string -> *prometheus.CounterVec
 	histograms sync.Map // string -> *prometheus.HistogramVec
+	gauges     sync.Map // string -> *prometheus.GaugeVec
 }
 
 // New 创建指标适配器。配置非法返回 MTRX_INVALID_CONFIG。
@@ -71,6 +76,44 @@ func (m *Metrics) ObserveDuration(name string, seconds float64, labels ...string
 	vec.WithLabelValues(labels...).Observe(seconds)
 }
 
+// AddCounter 按增量累加一个计数指标（如字节数、批量事件）。
+// 与 IncCounter 的差异仅在支持任意 delta；负增量会导致计数器回落，
+// 仅适合确有需要的场景（通常建议使用 AddGauge）。
+func (m *Metrics) AddCounter(name string, delta float64, labels ...string) {
+	if !validLabels(labels) {
+		return
+	}
+	vec := m.counterVec(name, len(labels))
+	if vec == nil {
+		return
+	}
+	vec.WithLabelValues(labels...).Add(delta)
+}
+
+// AddGauge 按增量调整一个瞬时量指标（如活跃请求数 +1/-1）。
+func (m *Metrics) AddGauge(name string, delta float64, labels ...string) {
+	if !validLabels(labels) {
+		return
+	}
+	vec := m.gaugeVec(name, len(labels))
+	if vec == nil {
+		return
+	}
+	vec.WithLabelValues(labels...).Add(delta)
+}
+
+// SetGauge 将瞬时量指标设置为指定值（如当前连接数）。
+func (m *Metrics) SetGauge(name string, value float64, labels ...string) {
+	if !validLabels(labels) {
+		return
+	}
+	vec := m.gaugeVec(name, len(labels))
+	if vec == nil {
+		return
+	}
+	vec.WithLabelValues(labels...).Set(value)
+}
+
 // validLabels 校验标签值均为合法 UTF-8
 // (client_golang 对非法 UTF-8 标签值会 panic,此处静默忽略)。
 func validLabels(labels []string) bool {
@@ -101,6 +144,10 @@ func (m *Metrics) Register(name, help string, labelNames ...string) error {
 		return errx.NewCodef(CodeAlreadyRegistered,
 			"指标 %q 已被懒创建为直方图", name)
 	}
+	if _, ok := m.gauges.Load(name); ok {
+		return errx.NewCodef(CodeAlreadyRegistered,
+			"指标 %q 已被懒创建为瞬时量", name)
+	}
 	m.registered[name] = registeredMetric{help: help, labelNames: append([]string(nil), labelNames...)}
 	return nil
 }
@@ -127,6 +174,9 @@ func (m *Metrics) counterVec(name string, labelCount int) *prometheus.CounterVec
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if lockHook != nil {
+		lockHook(m)
+	}
 	if v, ok := m.counters.Load(name); ok {
 		return v.(*prometheus.CounterVec)
 	}
@@ -155,6 +205,9 @@ func (m *Metrics) histogramVec(name string, labelCount int) *prometheus.Histogra
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if lockHook != nil {
+		lockHook(m)
+	}
 	if v, ok := m.histograms.Load(name); ok {
 		return v.(*prometheus.HistogramVec)
 	}
@@ -174,6 +227,37 @@ func (m *Metrics) histogramVec(name string, labelCount int) *prometheus.Histogra
 		return nil
 	}
 	m.histograms.Store(name, vec)
+	return vec
+}
+
+// gaugeVec 获取或懒创建瞬时量向量。
+func (m *Metrics) gaugeVec(name string, labelCount int) *prometheus.GaugeVec {
+	if v, ok := m.gauges.Load(name); ok {
+		return v.(*prometheus.GaugeVec)
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if lockHook != nil {
+		lockHook(m)
+	}
+	if v, ok := m.gauges.Load(name); ok {
+		return v.(*prometheus.GaugeVec)
+	}
+	var vec *prometheus.GaugeVec
+	reg, ok := m.metricMeta(name, labelCount)
+	if !ok {
+		return nil
+	}
+	vec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: m.cfg.namespace,
+		Name:      sanitizeName(name),
+		Help:      reg.help,
+	}, reg.labelNames)
+	if err := m.cfg.registry.Register(vec); err != nil {
+		// 注册失败(名称冲突等)不缓存,静默忽略本次。
+		return nil
+	}
+	m.gauges.Store(name, vec)
 	return vec
 }
 

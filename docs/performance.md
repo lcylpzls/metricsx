@@ -8,20 +8,23 @@ go test -run '^$' -bench . -benchmem -benchtime=1s .
 
 CI 的 bench job 记录每次 main 推送的基准日志(artifact),不设硬性门禁。
 
-## 参考数据(v0.4.0,Windows / AMD Ryzen 5 7600)
+## 参考数据(v1.1.0,Windows / AMD Ryzen 5 7600)
 
 | Benchmark | ns/op | B/op | allocs/op |
 | --- | --- | --- | --- |
-| IncCounter 命中 | 41.3 | 0 | 0 |
-| ObserveDuration 命中 | 43.3 | 0 | 0 |
-| DirectClient(对照组) | 21.2 | 0 | 0 |
+| IncCounter 命中 | 33.1 | 0 | 0 |
+| ObserveDuration 命中 | 41.4 | 0 | 0 |
+| AddCounter 命中 | 36.5 | 0 | 0 |
+| AddGauge 命中 | 35.3 | 0 | 0 |
+| SetGauge 命中 | 34.8 | 0 | 0 |
+| DirectClient(对照组) | 20.6 | 0 | 0 |
 
 ## 解读
 
-- 适配层总成本(查找 + 标签校验 + client_golang 写入)约 42ns,
+- 适配层总成本(查找 + 标签校验 + client_golang 写入)约 33~41ns,
   约为直接使用 client_golang Vec(21ns)的 2 倍——额外成本
   换来统一接口、懒创建、命名规范化与标签校验;
-- v0.4.0 将指标缓存改为 sync.Map:读路径无锁,
+- 指标缓存为 sync.Map:读路径无锁,
   并发懒创建由互斥锁 + 注册失败静默忽略保证正确;
 - 热路径 0 分配,远低于 1µs 目标。
 

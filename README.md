@@ -3,7 +3,7 @@
 自研 Prometheus 指标适配层:一个实例喂饱底座全部库的统一
 Metrics 接口,统一命名、统一标签、统一分桶。
 
-> 当前状态:**v1.0.0 正式版,API 已冻结**。
+> 当前状态:**v1.1.0 正式版,API 已冻结**。
 
 ## 快速上手
 
@@ -24,6 +24,9 @@ m.Register("dbx.queries", "数据库查询次数", "op")
 
 指标自动以 `myapp_dbx_queries_total` 等命名暴露到 Prometheus /metrics。
 `m.Gather()` 可抓取快照用于测试与调试。
+
+瞬时量（活跃请求、连接数等）使用 `AddGauge` / `SetGauge`，字节等
+批量累计使用 `AddCounter`，自动以 `myapp_webx_inflight` 等命名暴露。
 
 ## 性能
 
@@ -54,6 +57,8 @@ metricsx 不是指标系统,不实现 Prometheus 协议;它解决每个项目
 
 - 实现 dbx / httpx / webx / cachex / resiliencex / jobx 等
   统一形态的 Metrics 接口(IncCounter / ObserveDuration);
+- 扩展 Gauge 与增量计数(AddGauge / SetGauge / AddCounter),
+  覆盖活跃水位、连接数与字节量场景;
 - 懒创建 CounterVec / HistogramVec,统一 namespace 与命名规范;
 - 预注册声明帮助文本与标签键名,未注册自动占位。
 

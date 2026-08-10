@@ -28,3 +28,10 @@
 
 - **决策**:接入层依赖官方客户端,不自研暴露协议;
 - **影响**:与 dbx 依赖驱动同哲学,协议交给官方。
+
+## ADR-006:扩展 Gauge 与增量计数
+
+- **决策**:v1.1.0 新增 AddGauge / SetGauge / AddCounter,
+  覆盖活跃水位、连接数、字节量等 Counter+Histogram 无法表达的场景;
+- **影响**:webx/logx/jobx/idgenx/filex 等家族底座可统一外置接入
+  metricsx,无需各库自带 Prometheus 实现。

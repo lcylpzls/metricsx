@@ -123,6 +123,102 @@ func TestObserveDurationLazy(t *testing.T) {
 	}
 }
 
+func TestAddCounterDelta(t *testing.T) {
+	m, reg := newTestMetrics(t, WithNamespace("myapp"))
+	m.AddCounter("filex.bytes", 1024, "bucket", "put")
+	m.AddCounter("filex.bytes", 512, "bucket", "put")
+	f := gatherFamily(t, reg, "myapp_filex_bytes_total")
+	if f == nil {
+		t.Fatal("计数指标族不存在")
+	}
+	if got := f.GetMetric()[0].GetCounter().GetValue(); got != 1536 {
+		t.Errorf("累加值 = %v,want 1536", got)
+	}
+	if got := f.GetMetric()[0].GetLabel()[1].GetValue(); got != "put" {
+		t.Errorf("标签值 = %q,want put", got)
+	}
+}
+
+func TestAddCounterLabelMismatchIgnored(t *testing.T) {
+	m, reg := newTestMetrics(t)
+	if err := m.Register("ac", "帮助", "a", "b"); err != nil {
+		t.Fatal(err)
+	}
+	m.AddCounter("ac", 1.0, "only-one")
+	if f := gatherFamily(t, reg, "ac_total"); f != nil {
+		t.Error("标签不匹配不应产生增量计数")
+	}
+}
+
+func TestAddCounterRegisterFailureIgnored(t *testing.T) {
+	m, reg := newTestMetrics(t)
+	existing := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "manual_ac_total"}, nil)
+	reg.MustRegister(existing)
+	existing.WithLabelValues().Add(5)
+	m.AddCounter("manual_ac", 1.0)
+	if f := gatherFamily(t, reg, "manual_ac_total"); f == nil ||
+		f.GetMetric()[0].GetCounter().GetValue() != 5 {
+		t.Error("手动注册的计数器应保留且不被覆盖")
+	}
+}
+
+func TestAddGaugeDelta(t *testing.T) {
+	m, reg := newTestMetrics(t, WithNamespace("myapp"))
+	m.AddGauge("webx.inflight", 1)
+	m.AddGauge("webx.inflight", 1)
+	m.AddGauge("webx.inflight", -1)
+	f := gatherFamily(t, reg, "myapp_webx_inflight")
+	if f == nil {
+		t.Fatal("瞬时量指标族不存在")
+	}
+	if got := f.GetMetric()[0].GetGauge().GetValue(); got != 1 {
+		t.Errorf("瞬时值 = %v,want 1", got)
+	}
+}
+
+func TestLazyCreateInnerCheck(t *testing.T) {
+	old := lockHook
+	defer func() { lockHook = old }()
+
+	t.Run("counter", func(t *testing.T) {
+		m, _ := newTestMetrics(t)
+		sentinel := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "inner_c"}, nil)
+		lockHook = func(x *Metrics) { x.counters.Store("inner_c", sentinel) }
+		if got := m.counterVec("inner_c", 0); got != sentinel {
+			t.Error("counter 二次命中分支未返回哨兵向量")
+		}
+	})
+	t.Run("histogram", func(t *testing.T) {
+		m, _ := newTestMetrics(t)
+		sentinel := prometheus.NewHistogramVec(prometheus.HistogramOpts{Name: "inner_h"}, nil)
+		lockHook = func(x *Metrics) { x.histograms.Store("inner_h", sentinel) }
+		if got := m.histogramVec("inner_h", 0); got != sentinel {
+			t.Error("histogram 二次命中分支未返回哨兵向量")
+		}
+	})
+	t.Run("gauge", func(t *testing.T) {
+		m, _ := newTestMetrics(t)
+		sentinel := prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: "inner_g"}, nil)
+		lockHook = func(x *Metrics) { x.gauges.Store("inner_g", sentinel) }
+		if got := m.gaugeVec("inner_g", 0); got != sentinel {
+			t.Error("gauge 二次命中分支未返回哨兵向量")
+		}
+	})
+}
+
+func TestSetGaugeValue(t *testing.T) {
+	m, reg := newTestMetrics(t, WithNamespace("myapp"))
+	m.SetGauge("webx.connections", 7)
+	m.SetGauge("webx.connections", 3)
+	f := gatherFamily(t, reg, "myapp_webx_connections")
+	if f == nil {
+		t.Fatal("瞬时量指标族不存在")
+	}
+	if got := f.GetMetric()[0].GetGauge().GetValue(); got != 3 {
+		t.Errorf("瞬时值 = %v,want 3", got)
+	}
+}
+
 func TestRegisterWithLabels(t *testing.T) {
 	m, reg := newTestMetrics(t)
 	if err := m.Register("dbx.queries", "数据库查询次数", "op"); err != nil {
@@ -184,11 +280,19 @@ func TestRegisterAfterLazyCreated(t *testing.T) {
 	if code, _ := errx.CodeOf(err); code != CodeAlreadyRegistered {
 		t.Errorf("错误码 = %s,want %s", code, CodeAlreadyRegistered)
 	}
+	m.AddGauge("already_gauge", 1.0, "v")
+	err = m.Register("already_gauge", "帮助", "op")
+	if err == nil {
+		t.Fatal("已懒创建的瞬时量再注册应报错")
+	}
+	if code, _ := errx.CodeOf(err); code != CodeAlreadyRegistered {
+		t.Errorf("错误码 = %s,want %s", code, CodeAlreadyRegistered)
+	}
 }
 
 func TestVersion(t *testing.T) {
-	if Version != "v1.0.1" {
-		t.Errorf("Version = %s,want v1.0.1", Version)
+	if Version != "v1.1.0" {
+		t.Errorf("Version = %s,want v1.1.0", Version)
 	}
 }
 
@@ -384,16 +488,76 @@ func TestInvalidUTF8LabelsIgnored(t *testing.T) {
 	m, reg := newTestMetrics(t)
 	m.IncCounter("bad", "\xa4") // 非法 UTF-8,应静默忽略不 panic
 	m.ObserveDuration("bad_dur", 1.0, "\xa4")
+	m.AddCounter("bad_add", 1.0, "\xa4")
+	m.AddGauge("bad_gauge", 1.0, "\xa4")
+	m.SetGauge("bad_set", 1.0, "\xa4")
 	if f := gatherFamily(t, reg, "bad_total"); f != nil {
 		t.Error("非法标签不应产生指标")
 	}
 	if f := gatherFamily(t, reg, "bad_dur_seconds"); f != nil {
 		t.Error("非法标签不应产生直方图")
 	}
+	if f := gatherFamily(t, reg, "bad_add_total"); f != nil {
+		t.Error("非法标签不应产生增量计数")
+	}
+	if f := gatherFamily(t, reg, "bad_gauge"); f != nil {
+		t.Error("非法标签不应产生瞬时量")
+	}
 	// 合法标签正常
 	m.IncCounter("ok", "v")
 	if f := gatherFamily(t, reg, "ok_total"); f == nil {
 		t.Error("合法标签应产生指标")
+	}
+}
+
+func TestGaugeLabelMismatchIgnored(t *testing.T) {
+	m, reg := newTestMetrics(t)
+	if err := m.Register("g", "帮助", "a", "b"); err != nil {
+		t.Fatal(err)
+	}
+	m.AddGauge("g", 1.0, "only-one")
+	m.SetGauge("g", 1.0, "only-one")
+	if f := gatherFamily(t, reg, "g"); f != nil {
+		t.Error("标签不匹配不应产生瞬时量")
+	}
+}
+
+func TestGaugeRegisterFailureIgnored(t *testing.T) {
+	m, reg := newTestMetrics(t)
+	existing := prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: "manual_gauge"}, nil)
+	reg.MustRegister(existing)
+	existing.WithLabelValues().Set(9)
+	m.SetGauge("manual_gauge", 1.0)
+	if f := gatherFamily(t, reg, "manual_gauge"); f == nil ||
+		f.GetMetric()[0].GetGauge().GetValue() != 9 {
+		t.Error("手动注册的瞬时量应保留且不被覆盖")
+	}
+}
+
+func TestConcurrentGauge(t *testing.T) {
+	m, reg := newTestMetrics(t)
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			for j := 0; j < 500; j++ {
+				m.AddGauge("hot_gauge", 1, "v")
+				m.SetGauge("hot_set", 1, "v")
+			}
+		}()
+	}
+	close(start)
+	wg.Wait()
+	if f := gatherFamily(t, reg, "hot_gauge"); f == nil ||
+		f.GetMetric()[0].GetGauge().GetValue() != 4000 {
+		t.Errorf("并发瞬时量计数不符:%v", f)
+	}
+	if f := gatherFamily(t, reg, "hot_set"); f == nil ||
+		f.GetMetric()[0].GetGauge().GetValue() != 1 {
+		t.Errorf("并发设置瞬时量不符:%v", f)
 	}
 }
 
@@ -408,6 +572,9 @@ func FuzzMetrics(f *testing.F) {
 		}
 		m.IncCounter(name, l1, l2)
 		m.ObserveDuration(name, 1.0, l1, l2)
+		m.AddCounter(name, 1.0, l1, l2)
+		m.AddGauge(name, 1.0, l1, l2)
+		m.SetGauge(name, 1.0, l1, l2)
 		_ = m.Register(name, "帮助", "a", "b")
 		_ = m.Register(name, "帮助2", "x")
 	})

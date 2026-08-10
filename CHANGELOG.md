@@ -8,6 +8,19 @@
 
 - 完成调研、PRD、架构、API 草案、ADR 与迭代计划。
 
+## [v1.1.0] - 2026-08-10
+
+### 新增
+
+- AddCounter：按增量累加计数（字节量、批量事件）；
+- AddGauge / SetGauge：瞬时量指标（活跃请求、连接数、任务水位）；
+- GaugeVec 懒创建、预注册冲突检测与并发安全，与 Counter/Histogram 一致；
+- 文档与 PRD 同步扩展（Gauge 场景由家族统一标准化接入驱动）。
+
+### 质量
+
+- 覆盖率保持 100%；race / vet / staticcheck / fuzz 全绿。
+
 ## [v0.1.0] - 2026-08-09
 
 ### 新增

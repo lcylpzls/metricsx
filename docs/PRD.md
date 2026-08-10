@@ -25,7 +25,7 @@
 
 - 不自研 Prometheus 暴露协议 / 文本格式;
 - 不绑定具体 Web 框架(webx 自行接入);
-- 不做 Gauge / Summary 封装(当前接口只需 Counter + Histogram);
+- 不做 Summary 封装(家族当前接口只需 Counter + Histogram + Gauge);
 - 不做指标动态改名/聚合(标签维度由调用方负责)。
 
 ## 4. 能力需求
