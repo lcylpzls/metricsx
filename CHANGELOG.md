@@ -2,6 +2,12 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.4.1] - 2026-08-10
+
+### 新增
+
+- `metricsx/adapters/clix`：clix.Observer 适配器（命令计数/失败/耗时）。
+
 ## [v1.4.0] - 2026-08-10
 
 ### 破坏性重构
