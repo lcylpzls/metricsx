@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'adapters/v[0-9]+.[0-9]+.[0-9]+'
       - 'prometheus/v[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
@@ -47,9 +46,6 @@ jobs:
       - name: Test
         run: go test -count=1 ./...
 
-      - name: Test adapters
-        working-directory: adapters
-        run: go test -count=1 ./...
 
       - name: Test prometheus submodule
         working-directory: prometheus
@@ -73,9 +69,6 @@ jobs:
       - name: Run tests
         run: go test -v -race ./...
 
-      - name: Run adapters tests
-        working-directory: adapters
-        run: go test -v -race ./...
 
       - name: Run prometheus submodule tests
         working-directory: prometheus
@@ -86,4 +79,4 @@ jobs:
         with:
           name: ${{ github.ref_name }}
           generate_release_notes: true
-          make_latest: ${{ !startsWith(github.ref_name, 'adapters/') && !startsWith(github.ref_name, 'prometheus/') }}
+          make_latest: ${{ !startsWith(github.ref_name, 'prometheus/') }}
