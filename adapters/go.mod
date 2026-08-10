@@ -20,12 +20,12 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lcylpzls/confx v1.0.0 // indirect
-	github.com/lcylpzls/cryptox v1.0.0 // indirect
-	github.com/lcylpzls/httpx v1.2.1 // indirect
-	github.com/lcylpzls/logx v1.3.0 // indirect
+	github.com/lcylpzls/confx v1.0.1 // indirect
+	github.com/lcylpzls/cryptox v1.0.1 // indirect
+	github.com/lcylpzls/httpx v1.2.2 // indirect
+	github.com/lcylpzls/logx v1.3.1 // indirect
 	github.com/lcylpzls/resiliencex v1.3.0 // indirect
-	github.com/lcylpzls/validx v1.2.2 // indirect
+	github.com/lcylpzls/validx v1.2.3 // indirect
 	github.com/magiconair/properties v1.18.11 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
