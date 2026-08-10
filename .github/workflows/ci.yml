@@ -46,8 +46,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           go test -race -count=1 ./...
-          cd adapters && go test -race -count=1 ./...
-          cd prometheus && go test -race -count=1 ./...
+          (cd adapters && go test -race -count=1 ./...)
+          (cd prometheus && go test -race -count=1 ./...)
 
       - name: Coverage (Linux)
         if: runner.os == 'Linux'
