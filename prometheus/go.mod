@@ -3,9 +3,9 @@ module github.com/lcylpzls/metricsx/prometheus
 go 1.26.5
 
 require (
-	github.com/lcylpzls/errx v1.4.0
+	github.com/lcylpzls/errx v1.5.4
 	github.com/lcylpzls/metricsx v1.5.0
-	github.com/lcylpzls/testx v1.3.0
+	github.com/lcylpzls/testx v1.4.1
 	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/client_model v0.6.2
 )
