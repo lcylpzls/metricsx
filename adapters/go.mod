@@ -3,14 +3,14 @@ module github.com/lcylpzls/metricsx/adapters
 go 1.26.5
 
 require (
-	github.com/lcylpzls/clix v1.4.2
-	github.com/lcylpzls/errx v1.5.5
-	github.com/lcylpzls/idgenx v1.4.2
-	github.com/lcylpzls/jobx v1.5.2
-	github.com/lcylpzls/metricsx v1.5.2
-	github.com/lcylpzls/metricsx/prometheus v0.1.5
-	github.com/lcylpzls/testx v1.4.3
-	github.com/lcylpzls/updatex v1.0.2
+	github.com/lcylpzls/clix v1.4.3
+	github.com/lcylpzls/errx v1.5.6
+	github.com/lcylpzls/idgenx v1.4.3
+	github.com/lcylpzls/jobx v1.5.3
+	github.com/lcylpzls/metricsx v1.5.3
+	github.com/lcylpzls/metricsx/prometheus v0.1.6
+	github.com/lcylpzls/testx v1.4.4
+	github.com/lcylpzls/updatex v1.0.3
 	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/client_model v0.6.2
 )
