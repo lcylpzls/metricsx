@@ -1,6 +1,7 @@
 package filex
 
 import (
+	testx "github.com/lcylpzls/testx"
 	"testing"
 
 	"github.com/lcylpzls/metricsx"
@@ -9,17 +10,15 @@ import (
 
 func TestHookForward(t *testing.T) {
 	m, err := metricsx.New(metricsx.WithRegistry(prometheus.NewRegistry()))
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	h := New(m)
 	h.Add("bucket-a", "put", 1024)
 	h.IncError("bucket-a", "STORAGE_FAILED")
 
 	families, err := m.Gather()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	got := map[string]float64{}
 	for _, f := range families {
 		switch f.GetName() {

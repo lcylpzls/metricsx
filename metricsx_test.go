@@ -1,6 +1,7 @@
 package metricsx
 
 import (
+	testx "github.com/lcylpzls/testx"
 	"sync"
 	"testing"
 
@@ -14,9 +15,8 @@ func newTestMetrics(t *testing.T, opts ...Option) (*Metrics, *prometheus.Registr
 	reg := prometheus.NewRegistry()
 	all := append([]Option{WithRegistry(reg)}, opts...)
 	m, err := New(all...)
-	if err != nil {
-		t.Fatalf("New 失败:%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	return m, reg
 }
 
@@ -24,9 +24,8 @@ func newTestMetrics(t *testing.T, opts ...Option) (*Metrics, *prometheus.Registr
 func gatherFamily(t *testing.T, reg *prometheus.Registry, name string) *dto.MetricFamily {
 	t.Helper()
 	families, err := reg.Gather()
-	if err != nil {
-		t.Fatalf("Gather 失败:%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	for _, f := range families {
 		if f.GetName() == name {
 			return f
@@ -62,27 +61,24 @@ func TestNewInvalidConfig(t *testing.T) {
 
 func TestDefaultRegistry(t *testing.T) {
 	m, err := New()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	if m.Registry() != prometheus.DefaultRegisterer {
 		t.Error("默认应为 DefaultRegisterer")
 	}
 	// 实际写入默认注册表
 	m.IncCounter("default_test", "v")
 	families, err := prometheus.DefaultGatherer.Gather()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	found := false
 	for _, f := range families {
 		if f.GetName() == "default_test_total" {
 			found = true
 		}
 	}
-	if !found {
-		t.Error("默认注册表应包含写入的指标")
-	}
+	testx.True(t, found)
+
 }
 
 func TestIncCounterLazy(t *testing.T) {
@@ -92,9 +88,8 @@ func TestIncCounterLazy(t *testing.T) {
 	m.IncCounter("dbx.queries", "insert")
 
 	f := gatherFamily(t, reg, "myapp_dbx_queries_total")
-	if f == nil {
-		t.Fatal("指标族不存在")
-	}
+	testx.RequireNotNil(t, f)
+
 	if len(f.GetMetric()) != 2 {
 		t.Fatalf("序列数 = %d,want 2", len(f.GetMetric()))
 	}
@@ -114,9 +109,8 @@ func TestObserveDurationLazy(t *testing.T) {
 	m.ObserveDuration("httpx.duration", 1.5, "GET")
 
 	f := gatherFamily(t, reg, "myapp_httpx_duration_seconds")
-	if f == nil {
-		t.Fatal("直方图指标族不存在")
-	}
+	testx.RequireNotNil(t, f)
+
 	hist := f.GetMetric()[0].GetHistogram()
 	if hist.GetSampleCount() != 2 {
 		t.Errorf("样本数 = %d,want 2", hist.GetSampleCount())
@@ -128,9 +122,8 @@ func TestAddCounterDelta(t *testing.T) {
 	m.AddCounter("filex.bytes", 1024, "bucket", "put")
 	m.AddCounter("filex.bytes", 512, "bucket", "put")
 	f := gatherFamily(t, reg, "myapp_filex_bytes_total")
-	if f == nil {
-		t.Fatal("计数指标族不存在")
-	}
+	testx.RequireNotNil(t, f)
+
 	if got := f.GetMetric()[0].GetCounter().GetValue(); got != 1536 {
 		t.Errorf("累加值 = %v,want 1536", got)
 	}
@@ -168,9 +161,8 @@ func TestAddGaugeDelta(t *testing.T) {
 	m.AddGauge("webx.inflight", 1)
 	m.AddGauge("webx.inflight", -1)
 	f := gatherFamily(t, reg, "myapp_webx_inflight")
-	if f == nil {
-		t.Fatal("瞬时量指标族不存在")
-	}
+	testx.RequireNotNil(t, f)
+
 	if got := f.GetMetric()[0].GetGauge().GetValue(); got != 1 {
 		t.Errorf("瞬时值 = %v,want 1", got)
 	}
@@ -211,9 +203,8 @@ func TestSetGaugeValue(t *testing.T) {
 	m.SetGauge("webx.connections", 7)
 	m.SetGauge("webx.connections", 3)
 	f := gatherFamily(t, reg, "myapp_webx_connections")
-	if f == nil {
-		t.Fatal("瞬时量指标族不存在")
-	}
+	testx.RequireNotNil(t, f)
+
 	if got := f.GetMetric()[0].GetGauge().GetValue(); got != 3 {
 		t.Errorf("瞬时值 = %v,want 3", got)
 	}
@@ -226,9 +217,8 @@ func TestRegisterWithLabels(t *testing.T) {
 	}
 	m.IncCounter("dbx.queries", "select")
 	f := gatherFamily(t, reg, "dbx_queries_total")
-	if f == nil {
-		t.Fatal("指标族不存在")
-	}
+	testx.RequireNotNil(t, f)
+
 	if got := f.GetMetric()[0].GetLabel()[0].GetName(); got != "op" {
 		t.Errorf("标签键名 = %q,want op", got)
 	}
@@ -243,9 +233,8 @@ func TestRegisterDuplicate(t *testing.T) {
 		t.Fatal(err)
 	}
 	err := m.Register("name", "帮助2")
-	if err == nil {
-		t.Fatal("重复注册应报错")
-	}
+	testx.RequireError(t, err)
+
 	if code, _ := errx.CodeOf(err); code != CodeAlreadyRegistered {
 		t.Errorf("错误码 = %s,want %s", code, CodeAlreadyRegistered)
 	}
@@ -254,9 +243,8 @@ func TestRegisterDuplicate(t *testing.T) {
 func TestRegisterEmptyName(t *testing.T) {
 	m, _ := newTestMetrics(t)
 	err := m.Register("", "帮助")
-	if err == nil {
-		t.Fatal("空指标名应报错")
-	}
+	testx.RequireError(t, err)
+
 	if code, _ := errx.CodeOf(err); code != CodeInvalidConfig {
 		t.Errorf("错误码 = %s,want %s", code, CodeInvalidConfig)
 	}
@@ -266,73 +254,64 @@ func TestRegisterAfterLazyCreated(t *testing.T) {
 	m, _ := newTestMetrics(t)
 	m.IncCounter("already", "v")
 	err := m.Register("already", "帮助", "op")
-	if err == nil {
-		t.Fatal("已懒创建的指标再注册应报错")
-	}
+	testx.RequireError(t, err)
+
 	if code, _ := errx.CodeOf(err); code != CodeAlreadyRegistered {
 		t.Errorf("错误码 = %s,want %s", code, CodeAlreadyRegistered)
 	}
 	m.ObserveDuration("already_dur", 1.0, "v")
 	err = m.Register("already_dur", "帮助", "op")
-	if err == nil {
-		t.Fatal("已懒创建的直方图再注册应报错")
-	}
+	testx.RequireError(t, err)
+
 	if code, _ := errx.CodeOf(err); code != CodeAlreadyRegistered {
 		t.Errorf("错误码 = %s,want %s", code, CodeAlreadyRegistered)
 	}
 	m.AddGauge("already_gauge", 1.0, "v")
 	err = m.Register("already_gauge", "帮助", "op")
-	if err == nil {
-		t.Fatal("已懒创建的瞬时量再注册应报错")
-	}
+	testx.RequireError(t, err)
+
 	if code, _ := errx.CodeOf(err); code != CodeAlreadyRegistered {
 		t.Errorf("错误码 = %s,want %s", code, CodeAlreadyRegistered)
 	}
 }
 
 func TestVersion(t *testing.T) {
-	if Version != "v1.2.0" {
-		t.Errorf("Version = %s,want v1.2.0", Version)
-	}
+	testx.Equal(t, Version, "v1.3.0")
+
 }
 
 func TestGather(t *testing.T) {
 	m, _ := newTestMetrics(t)
 	m.IncCounter("gather_test", "v")
 	families, err := m.Gather()
-	if err != nil {
-		t.Fatalf("Gather 失败:%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	found := false
 	for _, f := range families {
 		if f.GetName() == "gather_test_total" {
 			found = true
 		}
 	}
-	if !found {
-		t.Error("Gather 应包含写入的指标")
-	}
+	testx.True(t, found)
+
 }
 
 func TestGatherDefaultRegistry(t *testing.T) {
 	m, err := New()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	m.IncCounter("gather_default", "v")
 	families, err := m.Gather()
-	if err != nil {
-		t.Fatalf("默认注册表 Gather 失败:%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	found := false
 	for _, f := range families {
 		if f.GetName() == "gather_default_total" {
 			found = true
 		}
 	}
-	if !found {
-		t.Error("默认注册表 Gather 应包含写入的指标")
-	}
+	testx.True(t, found)
+
 }
 
 // registererOnly 只实现 Registerer 不实现 Gatherer。
@@ -344,9 +323,8 @@ func (registererOnly) Unregister(prometheus.Collector) bool { return true }
 
 func TestGatherUnsupportedRegistry(t *testing.T) {
 	m, err := New(WithRegistry(registererOnly{}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	if _, err := m.Gather(); err == nil {
 		t.Fatal("不支持的注册表 Gather 应报错")
 	}
@@ -365,9 +343,8 @@ func TestLabelMismatchIgnored(t *testing.T) {
 	// 未注册指标的占位标签:任意数量都可用
 	m.IncCounter("auto", "a", "b", "c")
 	f := gatherFamily(t, reg, "auto_total")
-	if f == nil {
-		t.Fatal("占位标签指标应存在")
-	}
+	testx.RequireNotNil(t, f)
+
 	if len(f.GetMetric()[0].GetLabel()) != 3 {
 		t.Errorf("占位标签数 = %d,want 3", len(f.GetMetric()[0].GetLabel()))
 	}
@@ -567,9 +544,8 @@ func FuzzMetrics(f *testing.F) {
 	f.Add("", "x", "y")
 	f.Fuzz(func(t *testing.T, name, l1, l2 string) {
 		m, err := New(WithRegistry(prometheus.NewRegistry()))
-		if err != nil {
-			t.Fatal(err)
-		}
+		testx.RequireNoError(t, err)
+
 		m.IncCounter(name, l1, l2)
 		m.ObserveDuration(name, 1.0, l1, l2)
 		m.AddCounter(name, 1.0, l1, l2)

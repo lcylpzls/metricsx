@@ -2,6 +2,7 @@ package updatex
 
 import (
 	"errors"
+	testx "github.com/lcylpzls/testx"
 	"testing"
 
 	"github.com/lcylpzls/errx"
@@ -11,9 +12,8 @@ import (
 
 func TestNewCallbacks(t *testing.T) {
 	m, err := metricsx.New(metricsx.WithRegistry(prometheus.NewRegistry()))
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	cb := New(m)
 	cb.CheckTotal(2)
 	cb.CheckFailures(errors.New("network"))
@@ -23,9 +23,8 @@ func TestNewCallbacks(t *testing.T) {
 	cb.UpdateFailures(errx.NewCode("UPDATE_FAILED", "更新失败"))
 
 	families, err := m.Gather()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	names := map[string]bool{}
 	for _, f := range families {
 		names[f.GetName()] = true

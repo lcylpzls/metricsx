@@ -1,6 +1,7 @@
 package metricsx
 
 import (
+	testx "github.com/lcylpzls/testx"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -9,9 +10,8 @@ import (
 // BenchmarkIncCounterHit 基准:已懒创建的计数器命中。
 func BenchmarkIncCounterHit(b *testing.B) {
 	m, err := New(WithRegistry(prometheus.NewRegistry()))
-	if err != nil {
-		b.Fatal(err)
-	}
+	testx.RequireNoError(b, err)
+
 	m.IncCounter("bench", "v")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -22,9 +22,8 @@ func BenchmarkIncCounterHit(b *testing.B) {
 // BenchmarkObserveDurationHit 基准:已懒创建的直方图命中。
 func BenchmarkObserveDurationHit(b *testing.B) {
 	m, err := New(WithRegistry(prometheus.NewRegistry()))
-	if err != nil {
-		b.Fatal(err)
-	}
+	testx.RequireNoError(b, err)
+
 	m.ObserveDuration("bench_dur", 0.1, "v")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -35,9 +34,8 @@ func BenchmarkObserveDurationHit(b *testing.B) {
 // BenchmarkAddCounterHit 基准:已懒创建的增量计数命中。
 func BenchmarkAddCounterHit(b *testing.B) {
 	m, err := New(WithRegistry(prometheus.NewRegistry()))
-	if err != nil {
-		b.Fatal(err)
-	}
+	testx.RequireNoError(b, err)
+
 	m.AddCounter("bench_add", 1, "v")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -48,9 +46,8 @@ func BenchmarkAddCounterHit(b *testing.B) {
 // BenchmarkAddGaugeHit 基准:已懒创建的瞬时量增量命中。
 func BenchmarkAddGaugeHit(b *testing.B) {
 	m, err := New(WithRegistry(prometheus.NewRegistry()))
-	if err != nil {
-		b.Fatal(err)
-	}
+	testx.RequireNoError(b, err)
+
 	m.AddGauge("bench_gauge", 1, "v")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -61,9 +58,8 @@ func BenchmarkAddGaugeHit(b *testing.B) {
 // BenchmarkSetGaugeHit 基准:已懒创建的瞬时量设置命中。
 func BenchmarkSetGaugeHit(b *testing.B) {
 	m, err := New(WithRegistry(prometheus.NewRegistry()))
-	if err != nil {
-		b.Fatal(err)
-	}
+	testx.RequireNoError(b, err)
+
 	m.SetGauge("bench_set", 1, "v")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

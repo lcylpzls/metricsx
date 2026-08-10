@@ -1,6 +1,7 @@
 package errx
 
 import (
+	testx "github.com/lcylpzls/testx"
 	"testing"
 
 	"github.com/lcylpzls/errx"
@@ -11,17 +12,15 @@ import (
 
 func TestInstallUninstall(t *testing.T) {
 	m, err := metricsx.New(metricsx.WithRegistry(prometheus.NewRegistry()))
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	Install(m)
 	defer Uninstall()
 
 	_ = errx.NewCode("ADAPTER_A", "首次构造")
 	families, err := m.Gather()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	count := metricCount(families, "errx_constructed_total")
 	if count < 1 {
 		t.Fatalf("安装后应捕获构造事件：%v", count)

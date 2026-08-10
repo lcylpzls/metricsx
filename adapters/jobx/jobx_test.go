@@ -2,6 +2,7 @@ package jobx
 
 import (
 	"errors"
+	testx "github.com/lcylpzls/testx"
 	"testing"
 	"time"
 
@@ -12,9 +13,8 @@ import (
 
 func TestNewCallbacks(t *testing.T) {
 	m, err := metricsx.New(metricsx.WithRegistry(prometheus.NewRegistry()))
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	cb := New(m)
 	cb.Queued("task", 1)
 	cb.Running("task", -1)
@@ -27,9 +27,8 @@ func TestNewCallbacks(t *testing.T) {
 	cb.Replaced("task")
 
 	families, err := m.Gather()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	names := map[string]bool{}
 	for _, f := range families {
 		names[f.GetName()] = true

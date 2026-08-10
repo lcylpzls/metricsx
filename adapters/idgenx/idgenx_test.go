@@ -2,6 +2,7 @@ package idgenx
 
 import (
 	"errors"
+	testx "github.com/lcylpzls/testx"
 	"testing"
 
 	"github.com/lcylpzls/errx"
@@ -11,9 +12,8 @@ import (
 
 func TestNewCallbacks(t *testing.T) {
 	m, err := metricsx.New(metricsx.WithRegistry(prometheus.NewRegistry()))
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	cb := New(m)
 	cb.Generated(7, 1)
 	cb.Rejected(7, errors.New("backward"))
@@ -21,9 +21,8 @@ func TestNewCallbacks(t *testing.T) {
 	cb.WaitMS(7, 500)
 
 	families, err := m.Gather()
-	if err != nil {
-		t.Fatal(err)
-	}
+	testx.RequireNoError(t, err)
+
 	names := map[string]bool{}
 	for _, f := range families {
 		names[f.GetName()] = true
