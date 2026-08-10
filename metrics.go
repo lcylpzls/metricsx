@@ -1,39 +1,16 @@
 package metricsx
 
 import (
-	"fmt"
-	"strings"
-	"sync"
 	"unicode/utf8"
-
-	"github.com/lcylpzls/errx"
-	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 )
 
-// registeredMetric 是预注册的指标元信息。
-type registeredMetric struct {
-	help       string
-	labelNames []string
-}
-
-// lockHook 是测试专用并发分支钩子，生产恒为 nil，
-// 用于确定性覆盖懒创建路径中“二次命中”的竞态分支。
-var lockHook func(*Metrics)
-
-// Metrics 是 Prometheus 指标适配器,实现底座各库统一形态的
-// Metrics 接口(IncCounter / ObserveDuration),并发安全。
+// Metrics 是指标入口：所有操作委托后端（Sink），并发安全。
+// 默认后端为内置内存实现；Prometheus 后端见 metricsx/prometheus。
 type Metrics struct {
-	cfg config
-
-	mu         sync.RWMutex
-	registered map[string]registeredMetric
-	counters   sync.Map // string -> *prometheus.CounterVec
-	histograms sync.Map // string -> *prometheus.HistogramVec
-	gauges     sync.Map // string -> *prometheus.GaugeVec
+	sink Sink
 }
 
-// New 创建指标适配器。配置非法返回 MTRX_INVALID_CONFIG。
+// New 创建指标入口。配置非法返回 MTRX_INVALID_CONFIG。
 func New(opts ...Option) (*Metrics, error) {
 	cfg := defaultConfig()
 	for _, opt := range opts {
@@ -44,78 +21,72 @@ func New(opts ...Option) (*Metrics, error) {
 	if err := validateConfig(cfg); err != nil {
 		return nil, err
 	}
-	return &Metrics{
-		cfg:        cfg,
-		registered: make(map[string]registeredMetric),
-	}, nil
+	if cfg.sink == nil {
+		cfg.sink = newMemorySink()
+	}
+	return &Metrics{sink: cfg.sink}, nil
+}
+
+// Sink 返回当前指标后端。
+func (m *Metrics) Sink() Sink {
+	return m.sink
+}
+
+// Snapshot 返回后端快照；后端不支持快照时返回 false。
+func (m *Metrics) Snapshot() (Snapshot, bool) {
+	if s, ok := m.sink.(Snapshotter); ok {
+		return s.Snapshot(), true
+	}
+	return nil, false
 }
 
 // IncCounter 增加一个计数指标。
-// 指标未预注册时按 label 数量使用占位键 label0..N。
-// 标签数量与注册键名不一致时静默忽略(不 panic)。
 func (m *Metrics) IncCounter(name string, labels ...string) {
 	if !validLabels(labels) {
 		return
 	}
-	vec := m.counterVec(name, len(labels))
-	if vec == nil {
-		return
-	}
-	vec.WithLabelValues(labels...).Inc()
+	m.sink.IncCounter(name, labels)
 }
 
-// ObserveDuration 记录一次耗时观测(秒)。
+// ObserveDuration 记录一次耗时观测（秒）。
 func (m *Metrics) ObserveDuration(name string, seconds float64, labels ...string) {
 	if !validLabels(labels) {
 		return
 	}
-	vec := m.histogramVec(name, len(labels))
-	if vec == nil {
-		return
-	}
-	vec.WithLabelValues(labels...).Observe(seconds)
+	m.sink.ObserveDuration(name, seconds, labels)
 }
 
-// AddCounter 按增量累加一个计数指标（如字节数、批量事件）。
-// 与 IncCounter 的差异仅在支持任意 delta；负增量会导致计数器回落，
-// 仅适合确有需要的场景（通常建议使用 AddGauge）。
+// AddCounter 按增量累加计数指标。
 func (m *Metrics) AddCounter(name string, delta float64, labels ...string) {
 	if !validLabels(labels) {
 		return
 	}
-	vec := m.counterVec(name, len(labels))
-	if vec == nil {
-		return
-	}
-	vec.WithLabelValues(labels...).Add(delta)
+	m.sink.AddCounter(name, delta, labels)
 }
 
-// AddGauge 按增量调整一个瞬时量指标（如活跃请求数 +1/-1）。
+// AddGauge 按增量调整瞬时量指标。
 func (m *Metrics) AddGauge(name string, delta float64, labels ...string) {
 	if !validLabels(labels) {
 		return
 	}
-	vec := m.gaugeVec(name, len(labels))
-	if vec == nil {
-		return
-	}
-	vec.WithLabelValues(labels...).Add(delta)
+	m.sink.AddGauge(name, delta, labels)
 }
 
-// SetGauge 将瞬时量指标设置为指定值（如当前连接数）。
+// SetGauge 将瞬时量指标设置为指定值。
 func (m *Metrics) SetGauge(name string, value float64, labels ...string) {
 	if !validLabels(labels) {
 		return
 	}
-	vec := m.gaugeVec(name, len(labels))
-	if vec == nil {
-		return
-	}
-	vec.WithLabelValues(labels...).Set(value)
+	m.sink.SetGauge(name, value, labels)
 }
 
-// validLabels 校验标签值均为合法 UTF-8
-// (client_golang 对非法 UTF-8 标签值会 panic,此处静默忽略)。
+// Register 预注册指标，声明帮助文本与标签键名。
+// 名称非法或重复注册返回 errx 错误。
+func (m *Metrics) Register(name, help string, labelNames ...string) error {
+	return m.sink.RegisterMetric(name, help, labelNames)
+}
+
+// validLabels 校验标签值均为合法 UTF-8（非法标签静默忽略）。
 func validLabels(labels []string) bool {
 	for _, l := range labels {
 		if !utf8.ValidString(l) {
@@ -123,179 +94,4 @@ func validLabels(labels []string) bool {
 		}
 	}
 	return true
-}
-
-// Register 预注册指标,声明帮助文本与标签键名。
-// 重复注册返回 MTRX_ALREADY_REGISTERED。
-func (m *Metrics) Register(name, help string, labelNames ...string) error {
-	if name == "" {
-		return errx.NewCode(CodeInvalidConfig, "指标名不能为空")
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if _, ok := m.registered[name]; ok {
-		return errx.NewCodef(CodeAlreadyRegistered, "指标 %q 已注册", name)
-	}
-	if _, ok := m.counters.Load(name); ok {
-		return errx.NewCodef(CodeAlreadyRegistered,
-			"指标 %q 已被懒创建为计数器", name)
-	}
-	if _, ok := m.histograms.Load(name); ok {
-		return errx.NewCodef(CodeAlreadyRegistered,
-			"指标 %q 已被懒创建为直方图", name)
-	}
-	if _, ok := m.gauges.Load(name); ok {
-		return errx.NewCodef(CodeAlreadyRegistered,
-			"指标 %q 已被懒创建为瞬时量", name)
-	}
-	m.registered[name] = registeredMetric{help: help, labelNames: append([]string(nil), labelNames...)}
-	return nil
-}
-
-// Registry 返回当前注册表(默认或自定义)。
-func (m *Metrics) Registry() prometheus.Registerer {
-	return m.cfg.registry
-}
-
-// Gather 返回注册表全部指标快照(测试与调试用)。
-// 默认注册表对应 DefaultGatherer。
-func (m *Metrics) Gather() ([]*dto.MetricFamily, error) {
-	if g, ok := m.cfg.registry.(prometheus.Gatherer); ok {
-		return g.Gather()
-	}
-	return nil, errx.NewCode(CodeInvalidConfig, "注册表不支持 Gather")
-}
-
-// counterVec 获取或懒创建计数器向量。
-// 标签数量与注册键名不一致时返回 nil。
-func (m *Metrics) counterVec(name string, labelCount int) *prometheus.CounterVec {
-	if v, ok := m.counters.Load(name); ok {
-		return v.(*prometheus.CounterVec)
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if lockHook != nil {
-		lockHook(m)
-	}
-	if v, ok := m.counters.Load(name); ok {
-		return v.(*prometheus.CounterVec)
-	}
-	var vec *prometheus.CounterVec
-	reg, ok := m.metricMeta(name, labelCount)
-	if !ok {
-		return nil
-	}
-	vec = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: m.cfg.namespace,
-		Name:      sanitizeName(name) + "_total",
-		Help:      reg.help,
-	}, reg.labelNames)
-	if err := m.cfg.registry.Register(vec); err != nil {
-		// 注册失败(名称冲突等)不缓存,静默忽略本次。
-		return nil
-	}
-	m.counters.Store(name, vec)
-	return vec
-}
-
-// histogramVec 获取或懒创建直方图向量。
-func (m *Metrics) histogramVec(name string, labelCount int) *prometheus.HistogramVec {
-	if v, ok := m.histograms.Load(name); ok {
-		return v.(*prometheus.HistogramVec)
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if lockHook != nil {
-		lockHook(m)
-	}
-	if v, ok := m.histograms.Load(name); ok {
-		return v.(*prometheus.HistogramVec)
-	}
-	var vec *prometheus.HistogramVec
-	reg, ok := m.metricMeta(name, labelCount)
-	if !ok {
-		return nil
-	}
-	vec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: m.cfg.namespace,
-		Name:      sanitizeName(name) + "_seconds",
-		Help:      reg.help,
-		Buckets:   m.cfg.buckets,
-	}, reg.labelNames)
-	if err := m.cfg.registry.Register(vec); err != nil {
-		// 注册失败(名称冲突等)不缓存,静默忽略本次。
-		return nil
-	}
-	m.histograms.Store(name, vec)
-	return vec
-}
-
-// gaugeVec 获取或懒创建瞬时量向量。
-func (m *Metrics) gaugeVec(name string, labelCount int) *prometheus.GaugeVec {
-	if v, ok := m.gauges.Load(name); ok {
-		return v.(*prometheus.GaugeVec)
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if lockHook != nil {
-		lockHook(m)
-	}
-	if v, ok := m.gauges.Load(name); ok {
-		return v.(*prometheus.GaugeVec)
-	}
-	var vec *prometheus.GaugeVec
-	reg, ok := m.metricMeta(name, labelCount)
-	if !ok {
-		return nil
-	}
-	vec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: m.cfg.namespace,
-		Name:      sanitizeName(name),
-		Help:      reg.help,
-	}, reg.labelNames)
-	if err := m.cfg.registry.Register(vec); err != nil {
-		// 注册失败(名称冲突等)不缓存,静默忽略本次。
-		return nil
-	}
-	m.gauges.Store(name, vec)
-	return vec
-}
-
-// metricMeta 返回指标的帮助文本与标签键名。
-// 标签数量与预注册键名不一致时返回 false。
-func (m *Metrics) metricMeta(name string, labelCount int) (registeredMetric, bool) {
-	if reg, ok := m.registered[name]; ok {
-		if len(reg.labelNames) != labelCount {
-			return registeredMetric{}, false
-		}
-		return reg, true
-	}
-	labels := make([]string, labelCount)
-	for i := range labels {
-		labels[i] = fmt.Sprintf("label%d", i)
-	}
-	return registeredMetric{help: name, labelNames: labels}, true
-}
-
-// sanitizeName 将指标名规范化为 Prometheus 合法名称:
-// 非字母数字下划线冒号字符替换为下划线(如 "dbx.queries" → "dbx_queries")。
-func sanitizeName(name string) string {
-	if metricNamePattern.MatchString(name) {
-		return name
-	}
-	var b strings.Builder
-	b.Grow(len(name))
-	for i := 0; i < len(name); i++ {
-		c := name[i]
-		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-			(c >= '0' && c <= '9') || c == '_' || c == ':' {
-			b.WriteByte(c)
-		} else {
-			b.WriteByte('_')
-		}
-	}
-	if b.Len() == 0 {
-		return "metric"
-	}
-	return b.String()
 }

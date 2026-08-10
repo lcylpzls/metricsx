@@ -2,6 +2,24 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.4.0] - 2026-08-10
+
+### 破坏性重构
+
+- 核心拆分为协议 + 内存后端：`metricsx` 仅保留 `Sink` 接口、
+  `WithSink` 与零依赖内存实现，第三方依赖清零；
+- Prometheus 后端迁移至新子模块 `metricsx/prometheus`
+  （`WithPrometheus` / `WithNamespace` / `WithRegistry` /
+  `WithBuckets` / `Gather` / `Registry`）；
+- `metricsx.Gather` / `metricsx.Registry` 移出核心；
+- `Register` 委托后端 `RegisterMetric`，冲突检测由后端执行；
+- adapters 适配 `v1.4.0` 核心 API，测试改用 Prometheus 子模块。
+
+### 质量
+
+- 核心与 Prometheus 子模块覆盖率均 100%；
+- race / vet / staticcheck / fuzz / govulncheck 全绿。
+
 ## [v1.3.3] - 2026-08-10
 
 ### 变更

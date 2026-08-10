@@ -5,18 +5,19 @@ import (
 	"testing"
 
 	"github.com/lcylpzls/metricsx"
+	prometheusx "github.com/lcylpzls/metricsx/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 func TestHookForward(t *testing.T) {
-	m, err := metricsx.New(metricsx.WithRegistry(prometheus.NewRegistry()))
+	m, err := metricsx.New(prometheusx.WithPrometheus(prometheusx.WithRegistry(prometheus.NewRegistry())))
 	testx.RequireNoError(t, err)
 
 	h := New(m)
 	h.Add("bucket-a", "put", 1024)
 	h.IncError("bucket-a", "STORAGE_FAILED")
 
-	families, err := m.Gather()
+	families, err := prometheusx.Gather(m)
 	testx.RequireNoError(t, err)
 
 	got := map[string]float64{}

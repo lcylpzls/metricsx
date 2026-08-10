@@ -7,11 +7,17 @@ import (
 
 	"github.com/lcylpzls/cachex"
 	"github.com/lcylpzls/metricsx"
+	prometheusx "github.com/lcylpzls/metricsx/prometheus"
 	"github.com/lcylpzls/resiliencex"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func main() {
-	m, err := metricsx.New(metricsx.WithNamespace("demo"))
+	reg := prometheus.NewRegistry()
+	m, err := metricsx.New(prometheusx.WithPrometheus(
+		prometheusx.WithNamespace("demo"),
+		prometheusx.WithRegistry(reg),
+	))
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +40,7 @@ func main() {
 	_, _ = cache.Get("miss")
 	_ = limiter.Allow()
 
-	families, err := m.Gather()
+	families, err := prometheusx.Gather(m)
 	if err != nil {
 		panic(err)
 	}

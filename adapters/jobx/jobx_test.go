@@ -8,11 +8,12 @@ import (
 
 	"github.com/lcylpzls/errx"
 	"github.com/lcylpzls/metricsx"
+	prometheusx "github.com/lcylpzls/metricsx/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 func TestNewCallbacks(t *testing.T) {
-	m, err := metricsx.New(metricsx.WithRegistry(prometheus.NewRegistry()))
+	m, err := metricsx.New(prometheusx.WithPrometheus(prometheusx.WithRegistry(prometheus.NewRegistry())))
 	testx.RequireNoError(t, err)
 
 	cb := New(m)
@@ -26,7 +27,7 @@ func TestNewCallbacks(t *testing.T) {
 	cb.Skipped("task")
 	cb.Replaced("task")
 
-	families, err := m.Gather()
+	families, err := prometheusx.Gather(m)
 	testx.RequireNoError(t, err)
 
 	names := map[string]bool{}

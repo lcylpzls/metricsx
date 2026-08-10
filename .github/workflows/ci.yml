@@ -38,11 +38,16 @@ jobs:
         working-directory: adapters
         run: go test -count=1 ./...
 
+      - name: Test prometheus submodule
+        working-directory: prometheus
+        run: go test -count=1 ./...
+
       - name: Race detector (Linux)
         if: runner.os == 'Linux'
         run: |
           go test -race -count=1 ./...
           cd adapters && go test -race -count=1 ./...
+          cd prometheus && go test -race -count=1 ./...
 
       - name: Coverage (Linux)
         if: runner.os == 'Linux'
@@ -97,6 +102,10 @@ jobs:
       - name: Test
         run: go test -count=1 ./...
 
+      - name: Test prometheus submodule
+        working-directory: prometheus
+        run: go test -count=1 ./...
+
   fuzz:
     runs-on: ubuntu-latest
     steps:
@@ -110,6 +119,10 @@ jobs:
           check-latest: true
 
       - name: Fuzz metrics (5s)
+        run: go test -run '^$' -fuzz '^FuzzMetrics$' -fuzztime=5s .
+
+      - name: Fuzz prometheus submodule (5s)
+        working-directory: prometheus
         run: go test -run '^$' -fuzz '^FuzzMetrics$' -fuzztime=5s .
 
   examples:
@@ -170,6 +183,8 @@ jobs:
             echo "go.mod/go.sum 漂移,请执行 go mod tidy 后提交"
             exit 1
           fi
+          (cd adapters && go mod tidy && git diff --exit-code go.mod go.sum)
+          (cd prometheus && go mod tidy && git diff --exit-code go.mod go.sum)
 
   apidiff:
     runs-on: ubuntu-latest
