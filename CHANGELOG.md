@@ -8,6 +8,19 @@
 
 - 完成调研、PRD、架构、API 草案、ADR 与迭代计划。
 
+## [v1.2.0] - 2026-08-10
+
+### 新增
+
+- 官方适配层子模块 `github.com/lcylpzls/metricsx/adapters`：
+  filex / jobx / updatex / idgenx / errx 五个底座桥接；
+- CI 与 Release 增加 adapters 测试与 `adapters/vX.Y.Z` 发布支持；
+- 家族指标统一接入规范文档（docs/observability-metrics.md）。
+
+### 质量
+
+- 适配层各包覆盖率 100%；race / vet / staticcheck 全绿。
+
 ## [v1.1.0] - 2026-08-10
 
 ### 新增

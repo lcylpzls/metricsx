@@ -3,7 +3,7 @@
 自研 Prometheus 指标适配层:一个实例喂饱底座全部库的统一
 Metrics 接口,统一命名、统一标签、统一分桶。
 
-> 当前状态:**v1.1.0 正式版,API 已冻结**。
+> 当前状态:**v1.2.0 正式版,API 已冻结**。
 
 ## 快速上手
 
@@ -38,6 +38,7 @@ m.Register("dbx.queries", "数据库查询次数", "op")
 
 - [docs/README.md](docs/README.md) — 文档索引
 - [docs/operations.md](docs/operations.md) — 运行手册
+- [adapters](adapters) — 家族官方适配层（filex/jobx/updatex/idgenx/errx）
 - [examples/basic](examples/basic) — 接入示例
 - [CONTRIBUTING.md](CONTRIBUTING.md) — 开发流程
 - [SECURITY.md](SECURITY.md) — 安全说明
@@ -59,6 +60,7 @@ metricsx 不是指标系统,不实现 Prometheus 协议;它解决每个项目
   统一形态的 Metrics 接口(IncCounter / ObserveDuration);
 - 扩展 Gauge 与增量计数(AddGauge / SetGauge / AddCounter),
   覆盖活跃水位、连接数与字节量场景;
+- 官方适配层 metricsx/adapters：桥接 filex/jobx/updatex/idgenx/errx；
 - 懒创建 CounterVec / HistogramVec,统一 namespace 与命名规范;
 - 预注册声明帮助文本与标签键名,未注册自动占位。
 
