@@ -2,6 +2,12 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.5.4] - 2026-08-10
+
+### 变更
+
+- 依赖升级：errx v1.5.7、testx v1.4.5、validx v1.2.5、prometheus/client_golang v1.24.1 等（go get -u -t all）。
+
 ## [v1.5.3] - 2026-08-10
 
 ### 变更
