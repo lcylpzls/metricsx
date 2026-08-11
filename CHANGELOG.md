@@ -2,6 +2,16 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+
+## [v1.6.2] - 2026-08-12
+
+### 新增
+
+- `metricsx/prometheus.HTTPHandler(m)`：基于内部注册表直接导出
+  Prometheus 文本格式的 http.Handler，业务侧无需再手工组装
+  `promhttp.HandlerFor`；后端非 Prometheus 或注册表不支持
+  Gather 时返回 500。
+
 ## [v1.6.1] - 2026-08-11
 
 ### 文档

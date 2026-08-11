@@ -1,6 +1,9 @@
 package prometheus
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/lcylpzls/metricsx"
@@ -29,6 +32,37 @@ func TestPrometheusSinkEndToEnd(t *testing.T) {
 	} {
 		testx.True(t, names[want])
 	}
+}
+
+// TestHTTPHandler 覆盖 Prometheus 后端文本导出。
+func TestHTTPHandler(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	m, err := metricsx.New(WithPrometheus(WithNamespace("demo"), WithRegistry(reg)))
+	testx.RequireNoError(t, err)
+	m.IncCounter("requests", "a")
+
+	rec := httptest.NewRecorder()
+	HTTPHandler(m).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	testx.RequireEqual(t, rec.Code, http.StatusOK)
+	testx.RequireTrue(t, strings.Contains(rec.Body.String(), "demo_requests_total"))
+}
+
+// TestHTTPHandlerNotPrometheus 覆盖非 Prometheus 后端。
+func TestHTTPHandlerNotPrometheus(t *testing.T) {
+	m, err := metricsx.New()
+	testx.RequireNoError(t, err)
+	rec := httptest.NewRecorder()
+	HTTPHandler(m).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	testx.RequireEqual(t, rec.Code, http.StatusInternalServerError)
+}
+
+// TestHTTPHandlerNotGatherer 覆盖注册表不支持 Gather 的分支。
+func TestHTTPHandlerNotGatherer(t *testing.T) {
+	m, err := metricsx.New(WithPrometheus(WithRegistry(fakeRegisterer{})))
+	testx.RequireNoError(t, err)
+	rec := httptest.NewRecorder()
+	HTTPHandler(m).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	testx.RequireEqual(t, rec.Code, http.StatusInternalServerError)
 }
 
 func TestRegistry(t *testing.T) {
@@ -172,6 +206,13 @@ func TestLazyCreateInnerCheck(t *testing.T) {
 	_, err := Gather(m)
 	testx.RequireNoError(t, err)
 }
+
+// fakeRegisterer 是仅实现 prometheus.Registerer 的测试桩（不支持 Gather）。
+type fakeRegisterer struct{}
+
+func (fakeRegisterer) Register(prometheus.Collector) error  { return nil }
+func (fakeRegisterer) MustRegister(...prometheus.Collector) {}
+func (fakeRegisterer) Unregister(prometheus.Collector) bool { return true }
 
 // fakeRegisterer 是只注册不 Gather 的注册表替身。
 type fakeRegisterer struct{}

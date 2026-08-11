@@ -44,6 +44,8 @@ m, err := metricsx.New(prometheusx.WithPrometheus(
 ## 性能
 
 - 内存后端热路径零分配；Prometheus 后端指标缓存 sync.Map 无锁读；
+- Prometheus 文本端点可直接用 `metricsx/prometheus.HTTPHandler(m)`
+  挂载到任意 mux / webx 路由；
 - 详见 [docs/performance.md](docs/performance.md)。
 
 ## 文档与治理

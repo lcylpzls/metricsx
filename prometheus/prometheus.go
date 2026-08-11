@@ -5,6 +5,7 @@ package prometheus
 
 import (
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	"github.com/lcylpzls/errx"
 	"github.com/lcylpzls/metricsx"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	dto "github.com/prometheus/client_model/go"
 )
 
@@ -185,6 +187,25 @@ func Gather(m *metricsx.Metrics) ([]*dto.MetricFamily, error) {
 		return nil, errx.NewCode(metricsx.CodeInvalidConfig, "注册表不支持 Gather")
 	}
 	return g.Gather()
+}
+
+// HTTPHandler 返回导出 Prometheus 文本格式的 http.Handler。
+// 后端不是 Prometheus 时返回 500 错误处理器，避免业务侧直接依赖
+// prometheus/client_golang。
+func HTTPHandler(m *metricsx.Metrics) http.Handler {
+	reg, ok := Registry(m)
+	if !ok {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			http.Error(w, "metrics backend is not prometheus", http.StatusInternalServerError)
+		})
+	}
+	g, ok := reg.(prometheus.Gatherer)
+	if !ok {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			http.Error(w, "prometheus registry does not support gather", http.StatusInternalServerError)
+		})
+	}
+	return promhttp.HandlerFor(g, promhttp.HandlerOpts{})
 }
 
 // counterVec 获取或懒创建计数器向量。
