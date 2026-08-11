@@ -207,13 +207,6 @@ func TestLazyCreateInnerCheck(t *testing.T) {
 	testx.RequireNoError(t, err)
 }
 
-// fakeRegisterer 是仅实现 prometheus.Registerer 的测试桩（不支持 Gather）。
-type fakeRegisterer struct{}
-
-func (fakeRegisterer) Register(prometheus.Collector) error  { return nil }
-func (fakeRegisterer) MustRegister(...prometheus.Collector) {}
-func (fakeRegisterer) Unregister(prometheus.Collector) bool { return true }
-
 // fakeRegisterer 是只注册不 Gather 的注册表替身。
 type fakeRegisterer struct{}
 
