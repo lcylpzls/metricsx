@@ -10,12 +10,11 @@
 1. 本地全量验证(vet / staticcheck / race / 覆盖率 100% / fuzz 短跑);
 2. 更新 CHANGELOG 与 README(当前版本、特性、示例);
 3. 提交并推送 main,等待 CI 全绿:
-   - test(三平台)、fuzz、examples、bench、apidiff、tidy、vuln;
+   - test(三平台)、fuzz、examples、bench、tidy、vuln;
 4. 打 tag `vX.Y.Z` 并推送,Release workflow 自动创建 Release;
 5. 验证 `go list -m -versions github.com/lcylpzls/metricsx` 出现新版本。
 
 ## 正式版(v1.0.0)额外要求
 
-- API 冻结审查:确认无意外导出符号变化;
 - README 增加稳定性承诺;
-- apidiff 报告归档到 Release 说明。
+- 破坏性变更按家族约定走 minor 版本,并在 CHANGELOG 显著标注。

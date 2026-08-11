@@ -3,7 +3,7 @@
 家族指标基座核心：定义统一指标协议（Sink）与内置内存后端，
 核心零第三方依赖；Prometheus 后端在 `metricsx/prometheus` 子模块。
 
-> 当前状态：**v1.4.0**（破坏性重构：Prometheus 后端已拆分子模块）。
+> 当前状态：**v1.6.1**（Prometheus 后端位于 `metricsx/prometheus` 子模块）。
 
 ## 快速上手
 
@@ -38,7 +38,8 @@ m, err := metricsx.New(prometheusx.WithPrometheus(
 - 核心 `metricsx`：`Sink` 协议 + `WithSink` 注入 + 内存后端，仅依赖 errx；
 - 子模块 `metricsx/prometheus`：`WithPrometheus` / `WithNamespace` /
   `WithRegistry` / `WithBuckets` / `Gather` / `Registry`；
-- 适配层 `metricsx/adapters`：filex/jobx/updatex/idgenx/errx 官方适配。
+- 家族接入：各库经 `WithMetrics(m)` / `Config.Metrics` /
+  `errx.SetMetricsHook` 直接注入，适配桥在项目层内联。
 
 ## 性能
 
@@ -48,7 +49,6 @@ m, err := metricsx.New(prometheusx.WithPrometheus(
 ## 文档与治理
 
 - [docs/README.md](docs/README.md) — 文档索引
-- [adapters](adapters) — 家族官方适配层
 - [prometheus](prometheus) — Prometheus 后端子模块
 - [examples/basic](examples/basic) — 接入示例
 - [CONTRIBUTING.md](CONTRIBUTING.md) — 开发流程
