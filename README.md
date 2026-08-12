@@ -3,7 +3,7 @@
 家族指标基座核心：定义统一指标协议（Sink）与内置内存后端，
 核心零第三方依赖；Prometheus 后端在 `metricsx/prometheus` 子模块。
 
-> 当前状态：**v1.6.1**（Prometheus 后端位于 `metricsx/prometheus` 子模块）。
+> 当前状态：**v1.6.3**（Prometheus 后端位于 `metricsx/prometheus` 子模块）。
 
 ## 快速上手
 

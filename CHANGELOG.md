@@ -2,6 +2,21 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [v1.6.3] - 2026-08-12
+
+### 发布
+
+- `metricsx/prometheus` 子模块首次以 v1.6.3 版本发布（补发 HTTPHandler 产物）：
+  - 依赖对齐 metricsx v1.6.2、prometheus/client_golang v1.24.1、
+    errx v1.6.1、testx v1.4.5、validx v1.3.1 等最新版本；
+  - 业务侧现可直接 `go get github.com/lcylpzls/metricsx/prometheus@v1.6.3`
+    使用 `HTTPHandler` / `WithPrometheus` / `Gather` / `Registry`；
+- 根库无功能变更，仅版本常量与文档同步。
+
+### 质量
+
+- 根库与 prometheus 子模块覆盖率均 100%；race / vet / staticcheck 全绿。
+
 
 ## [v1.6.2] - 2026-08-12
 
